@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royal Gaming & Matka - Secure Platform</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs (v9 Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; background-color: #0f172a; color: #f8fafc; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 shadow-md">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-yellow-400">🔥 Royal Gaming & Matka</h1>
+            <div id="user-info" class="hidden flex items-center gap-4">
+                <span id="nav-username" class="text-sm font-semibold text-yellow-300"></span>
+                <button onclick="logoutUser()" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded font-semibold transition">लॉग आउट</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4 space-y-6">
+
+        <!-- 1. AUTHENTICATION SECTION -->
+        <section id="auth-section" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md mx-auto mt-10 shadow-2xl">
+            <div class="flex border-b border-slate-700 mb-6 text-sm font-semibold">
+                <button id="tab-login" onclick="switchTab('login')" class="flex-1 pb-2 text-center border-b-2 border-yellow-400 text-yellow-400">लॉगिन</button>
+                <button id="tab-register" onclick="switchTab('register')" class="flex-1 pb-2 text-center text-slate-400">नया रजिस्टर</button>
+                <button id="tab-forgot" onclick="switchTab('forgot')" class="flex-1 pb-2 text-center text-slate-400">पासवर्ड रिकवर</button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="form-login" class="space-y-4">
+                <h2 class="text-xl font-bold text-yellow-400 text-center">खाते में लॉगिन करें</h2>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">यूज़रनेम या मोबाइल नंबर</label>
+                    <input type="text" id="login-id" placeholder="Username या 10 अंक मोबाइल" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-yellow-400 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">पासवर्ड</label>
+                    <input type="password" id="login-pass" placeholder="******" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-yellow-400 text-sm">
+                </div>
+                <button onclick="processLogin()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold py-2.5 rounded transition shadow-lg">लॉगिन करें</button>
+            </div>
+
+            <!-- Register Form -->
+            <div id="form-register" class="space-y-4 hidden">
+                <h2 class="text-xl font-bold text-yellow-400 text-center">नया खाता बनाएँ</h2>
+                <div id="reg-step-1" class="space-y-3">
+                    <p class="text-xs text-slate-400 text-center">पहले मोबाइल नंबर पर असली SMS OTP प्राप्त करें।</p>
+                    <div class="flex gap-2">
+                        <span class="bg-slate-900 border border-slate-600 px-3 py-2 rounded text-slate-300 flex items-center text-sm">+91</span>
+                        <input type="tel" id="reg-phone" maxlength="10" placeholder="मोबाइल नंबर" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-yellow-400 text-sm">
+                    </div>
+                    <button onclick="sendRegOTP()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold py-2.5 rounded transition">OTP भेजें</button>
+                </div>
+                <div id="reg-step-2" class="space-y-3 hidden">
+                    <input type="text" id="reg-otp" maxlength="6" placeholder="6 अंकों का OTP" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-center tracking-widest text-sm">
+                    <button onclick="verifyRegOTP()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded transition">OTP वेरीफाई करें</button>
+                </div>
+                <div id="reg-step-3" class="space-y-3 hidden">
+                    <input type="text" id="reg-username" placeholder="नया Unique Username चुनें" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-sm">
+                    <input type="password" id="reg-password" placeholder="नया पासवर्ड बनाएँ" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-sm">
+                    <button onclick="completeRegistration()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded transition">रजिस्ट्रेशन पूरा करें</button>
+                </div>
+            </div>
+
+            <!-- Forgot Password Form -->
+            <div id="form-forgot" class="space-y-4 hidden">
+                <h2 class="text-xl font-bold text-yellow-400 text-center">पासवर्ड रिकवर करें</h2>
+                <div id="forgot-step-1" class="space-y-3">
+                    <input type="tel" id="forgot-phone" maxlength="10" placeholder="अपना रजिस्टर्ड मोबाइल नंबर" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-sm">
+                    <button onclick="sendForgotOTP()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold py-2.5 rounded transition">रिकवरी OTP भेजें</button>
+                </div>
+                <div id="forgot-step-2" class="space-y-3 hidden">
+                    <input type="text" id="forgot-otp" maxlength="6" placeholder="OTP दर्ज करें" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-center text-sm">
+                    <input type="password" id="new-password" placeholder="नया पासवर्ड दर्ज करें" class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white text-sm">
+                    <button onclick="resetPassword()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded transition">पासवर्ड बदलो</button>
+                </div>
+            </div>
+
+            <!-- Recaptcha Verified Container (Crucial to prevent undefined verify error) -->
+            <div id="recaptcha-container" class="mt-4 flex justify-center"></div>
+        </section>
+
+        <!-- 2. USER DASHBOARD -->
+        <section id="user-dashboard" class="hidden space-y-6">
+            <div class="bg-gradient-to-r from-yellow-600 to-amber-700 p-4 rounded-xl text-slate-950 font-bold shadow-lg flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg">📢 पहली जमा (Deposit) पर 10% एक्स्ट्रा बोनस!</h3>
+                    <p class="text-xs text-slate-900 font-normal">रेफर करें और तुरंत रिवार्ड पाएं।</p>
+                </div>
+                <button onclick="alert('रेफर लिंक कॉपी कर लिया गया है!')" class="bg-slate-950 text-yellow-400 px-3 py-1.5 rounded text-xs">Refer & Earn</button>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl flex justify-between items-center shadow-lg">
+                <div>
+                    <p class="text-xs text-slate-400">उपलब्ध वॉलेट बैलेंस</p>
+                    <h3 class="text-2xl font-bold text-green-400" id="wallet-balance">₹0.00</h3>
+                </div>
+                <button onclick="alert('डिपॉजिट के लिए मास्टर एडमिन से संपर्क करें।')" class="bg-yellow-500 hover:bg-yellow-600 text-slate-950 px-4 py-2 rounded-lg font-bold text-sm transition">पैसे जोड़ें (Deposit)</button>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl">
+                <h3 class="text-lg font-bold text-yellow-400 mb-4">🎲 सभी 8 लाइव मार्केट्स और सटीक टाइमिंग्स</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="markets-grid"></div>
+            </div>
+        </section>
+
+        <!-- 3. MASTER ADMIN PANEL -->
+        <section id="admin-dashboard" class="hidden space-y-6">
+            <div class="bg-red-950 border border-red-800 p-4 rounded-xl flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-red-400">⚡ Master Admin Control Panel</h2>
+                    <p class="text-xs text-red-200">स्वागत है गुरु! आपका मास्टर एडमिन नंबर (8076010690) वेरीफाइड है।</p>
+                </div>
+                <span class="bg-red-600 text-white text-xs px-2.5 py-1 rounded font-bold">SUPER ADMIN</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl">
+                    <p class="text-xs text-slate-400">कुल रजिस्टर्ड यूज़र्स</p>
+                    <h3 class="text-xl font-bold text-white" id="admin-total-users">0</h3>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl">
+                    <p class="text-xs text-slate-400">कुल लाइव बेट्स</p>
+                    <h3 class="text-xl font-bold text-yellow-400" id="admin-total-bets">0</h3>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl">
+                    <p class="text-xs text-slate-400">प्लेटफ़ॉर्म रेवेन्यू</p>
+                    <h3 class="text-xl font-bold text-green-400" id="admin-total-revenue">₹0</h3>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl space-y-4">
+                <h3 class="text-md font-bold text-yellow-400">📋 लाइव यूजर बेट्स और ऑडिट लॉग्स</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900 uppercase text-slate-400">
+                            <tr>
+                                <th class="p-2">यूजर</th>
+                                <th class="p-2">मार्केट</th>
+                                <th class="p-2">नंबर</th>
+                                <th class="p-2">राशि</th>
+                                <th class="p-2">समय</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-bets-table"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ⚡ मास्टर एडमिन नंबर
+        const MASTER_ADMIN_MOBILE = "8076010690";
+
+        const marketsList = [
+            { name: "Delhi Bazar", open: "06:00 AM", close: "03:30 PM" },
+            { name: "Sri Ganesh", open: "06:00 AM", close: "04:30 PM" },
+            { name: "Faridabaad", open: "06:00 AM", close: "06:00 PM" },
+            { name: "786", open: "06:00 AM", close: "07:30 PM" },
+            { name: "Dhan laxmi", open: "06:00 AM", close: "09:00 PM" },
+            { name: "Gaziyabaad", open: "06:00 AM", close: "09:30 PM" },
+            { name: "Gali", open: "06:00 AM", close: "11:30 PM" },
+            { name: "Desawer", open: "06:00 AM", close: "04:00 AM" }
+        ];
+
+        function switchTab(tab) {
+            document.getElementById('form-login').classList.add('hidden');
+            document.getElementById('form-register').classList.add('hidden');
+            document.getElementById('form-forgot').classList.add('hidden');
+            
+            document.getElementById('tab-login').className = "flex-1 pb-2 text-center text-slate-400 border-b-2 border-transparent";
+            document.getElementById('tab-register').className = "flex-1 pb-2 text-center text-slate-400 border-b-2 border-transparent";
+            document.getElementById('tab-forgot').className = "flex-1 pb-2 text-center text-slate-400 border-b-2 border-transparent";
+
+            document.getElementById('tab-' + tab).className = "flex-1 pb-2 text-center border-b-2 border-yellow-400 text-yellow-400 font-semibold";
+            document.getElementById('form-' + tab).classList.remove('hidden');
+            
+            // Re-initialize recaptcha safely when switching tabs
+            initRecaptcha();
+        }
+
+        // Safe Recaptcha Initialization Function
+        function initRecaptcha() {
+            if (!window.recaptchaVerifier) {
+                try {
+                    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                        'size': 'invisible',
+                        'callback': (response) => {}
+                    }, auth);
+                    window.recaptchaVerifier.render();
+                } catch(e) {
+                    console.log("Recaptcha Setup Note:", e);
+                }
+            }
+        }
+
+        window.onload = function() {
+            initRecaptcha();
+        };
+
+        function sendRegOTP() {
+            const phone = document.getElementById('reg-phone').value.trim();
+            if(phone.length !== 10) { alert('कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें!'); return; }
+            
+            initRecaptcha();
+            auth.signInWithPhoneNumber("+91" + phone, window.recaptchaVerifier).then((res) => {
+                window.confirmationResult = res;
+                document.getElementById('reg-step-1').classList.add('hidden');
+                document.getElementById('reg-step-2').classList.remove('hidden');
+                alert('असली SMS OTP भेज दिया गया है!');
+            }).catch(err => alert('OTP भेजने में विफल: ' + err.message));
+        }
+
+        function verifyRegOTP() {
+            const otp = document.getElementById('reg-otp').value.trim();
+            if(otp.length !== 6) { alert('6 अंकों का OTP दर्ज करें!'); return; }
+
+            window.confirmationResult.confirm(otp).then((result) => {
+                window.verifiedUserPhone = result.user.phoneNumber.replace("+91", "");
+                document.getElementById('reg-step-2').classList.add('hidden');
+                document.getElementById('reg-step-3').classList.remove('hidden');
+                alert('OTP सत्यापित हो गया है! अब अपना यूजरनेम और पासवर्ड सेट करें।');
+            }).catch(() => alert('गलत OTP! कृपया पुनः प्रयास करें।'));
+        }
+
+        function completeRegistration() {
+            const username = document.getElementById('reg-username').value.trim();
+            const password = document.getElementById('reg-password').value.trim();
+            if(!username || !password) { alert('कृपया सभी जानकारी भरें!'); return; }
+
+            db.collection("users").doc(username).set({
+                phone: window.verifiedUserPhone,
+                username: username,
+                password: password,
+                balance: 500,
+                createdAt: new Date()
+            }).then(() => {
+                alert('रजिस्ट्रेशन सफल! अब आप अपने नए यूजरनेम और पासवर्ड से लॉगिन कर सकते हैं।');
+                switchTab('login');
+            });
+        }
+
+        function processLogin() {
+            const loginId = document.getElementById('login-id').value.trim();
+            const password = document.getElementById('login-pass').value.trim();
+
+            if(!loginId || !password) { alert('यूजरनेम और पासवर्ड दर्ज करें!'); return; }
+
+            // Master Admin Direct Login check
+            if(loginId === MASTER_ADMIN_MOBILE || loginId === "8076010690") {
+                launchAdminDashboard();
+                return;
+            }
+
+            db.collection("users").doc(loginId).get().then((doc) => {
+                if(doc.exists && doc.data().password === password) {
+                    launchUserDashboard(doc.data());
+                } else {
+                    db.collection("users").where("phone", "==", loginId).get().then((snapshot) => {
+                        if(!snapshot.empty && snapshot.docs[0].data().password === password) {
+                            launchUserDashboard(snapshot.docs[0].data());
+                        } else {
+                            alert('गलत यूज़रनेम या पासवर्ड!');
+                        }
+                    });
+                }
+            });
+        }
+
+        function launchUserDashboard(userData) {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('user-info').classList.remove('hidden');
+            document.getElementById('nav-username').innerText = userData.username;
+            document.getElementById('user-dashboard').classList.remove('hidden');
+            document.getElementById('wallet-balance').innerText = "₹" + (userData.balance || 500) + ".00 (10% Bonus)";
+
+            const grid = document.getElementById('markets-grid');
+            grid.innerHTML = "";
+            marketsList.forEach(m => {
+                grid.innerHTML += `<div class="bg-slate-900 border border-slate-700 p-3 rounded-lg text-center hover:border-yellow-400 cursor-pointer transition">
+                    <p class="font-bold text-sm text-yellow-400">${m.name}</p>
+                    <p class="text-[11px] text-slate-300">ओपन: ${m.open} | क्लोज: ${m.close}</p>
+                    <span class="text-[10px] text-green-400 mt-1 block">● मार्केट लाइव है</span>
+                </div>`;
+            });
+        }
+
+        function launchAdminDashboard() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('user-info').classList.remove('hidden');
+            document.getElementById('nav-username').innerText = "Master Admin (8076010690)";
+            document.getElementById('admin-dashboard').classList.remove('hidden');
+
+            db.collection("bets").onSnapshot((snapshot) => {
+                let table = document.getElementById('admin-bets-table');
+                table.innerHTML = "";
+                document.getElementById('admin-total-bets').innerText = snapshot.size;
+                let rev = 0;
+                snapshot.forEach(doc => {
+                    let d = doc.data();
+                    rev += Number(d.amount || 0);
+                    table.innerHTML += `<tr class="border-b border-slate-700">
+                        <td class="p-2">${d.username}</td>
+                        <td class="p-2">${d.market}</td>
+                        <td class="p-2">${d.number}</td>
+                        <td class="p-2 text-green-400">₹${d.amount}</td>
+                        <td class="p-2 text-slate-400">अभी</td>
+                    </tr>`;
+                });
+                document.getElementById('admin-total-revenue').innerText = "₹" + rev;
+            });
+
+            db.collection("users").get().then(snap => {
+                document.getElementById('admin-total-users').innerText = snap.size;
+            });
+        }
+
+        function sendForgotOTP() {
+            const phone = document.getElementById('forgot-phone').value.trim();
+            if(phone.length !== 10) { alert('सही 10 अंकों का नंबर दर्ज करें!'); return; }
+            
+            initRecaptcha();
+            auth.signInWithPhoneNumber("+91" + phone, window.recaptchaVerifier).then((res) => {
+                window.confirmationResult = res;
+                document.getElementById('forgot-step-1').classList.add('hidden');
+                document.getElementById('forgot-step-2').classList.remove('hidden');
+                alert('रिकवरी OTP भेज दिया गया है!');
+            }).catch(err => alert('एरर: ' + err.message));
+        }
+
+        function resetPassword() {
+            const otp = document.getElementById('forgot-otp').value.trim();
+            const newPass = document.getElementById('new-password').value.trim();
+            const phone = document.getElementById('forgot-phone').value.trim();
+
+            if(otp.length !== 6 || !newPass) { alert('OTP और नया पासवर्ड सही भरें!'); return; }
+
+            window.confirmationResult.confirm(otp).then(() => {
+                db.collection("users").where("phone", "==", phone).get().then(snap => {
+                    if(!snap.empty) {
+                        db.collection("users").doc(snap.docs[0].id).update({ password: newPass }).then(() => {
+                            alert('पासवर्ड सफलतापूर्वक बदल गया है!');
+                            switchTab('login');
+                        });
+                    } else {
+                        alert('यह मोबाइल नंबर किसी अकाउंट से लिंक नहीं है!');
+                    }
+                });
+            }).catch(() => alert('गलत OTP! पुनः प्रयास करें।'));
+        }
+
+        function logoutUser() {
+            auth.signOut().then(() => location.reload());
+        }
+    </script>
+</body>
+</html>
