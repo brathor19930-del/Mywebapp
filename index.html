@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Royal Gaming & Matka Platform</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: auto;
+      padding: 15px;
+    }
+
+    header {
+      background: #1e293b;
+      color: #facc15;
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 15px;
+      border: 1px solid rgba(250, 204, 21, 0.2);
+    }
+
+    header h1 {
+      margin-bottom: 5px;
+    }
+
+    .banner, .auth-card, .section {
+      background: #1e293b;
+      color: #f8fafc;
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,.3);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .banner h2, .auth-card h2, .section h2 {
+      margin-bottom: 8px;
+      color: #facc15;
+    }
+
+    input {
+      width: 100%;
+      max-width: 450px;
+      padding: 13px;
+      margin: 8px 0;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #fff;
+      border-radius: 10px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #facc15;
+    }
+
+    button {
+      background: #facc15;
+      color: #0f172a;
+      font-weight: bold;
+      border: none;
+      border-radius: 9px;
+      padding: 11px 16px;
+      cursor: pointer;
+      margin: 5px 3px;
+    }
+
+    button:hover {
+      opacity: .9;
+    }
+
+    .secondary {
+      background: #475569;
+      color: #fff;
+    }
+
+    .danger {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .message {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      font-size: 14px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .market-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .market {
+      border: 1px solid #334155;
+      background: #0f172a;
+      border-radius: 14px;
+      padding: 15px;
+    }
+
+    .market h3 {
+      margin-bottom: 10px;
+      color: #facc15;
+    }
+
+    .open {
+      color: #22c55e;
+      font-weight: bold;
+    }
+
+    .closed {
+      color: #dc2626;
+      font-weight: bold;
+    }
+
+    .numbers {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 6px;
+      margin-top: 15px;
+    }
+
+    .number {
+      padding: 10px 2px;
+      margin: 0;
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .number.selected {
+      background: #facc15;
+      color: #0f172a;
+      font-weight: bold;
+    }
+
+    .profile {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .small {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    @media(max-width:600px) {
+      .numbers {
+        grid-template-columns: repeat(5, 1fr);
+      }
+      .app {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <header>
+    <h1>🔥 Royal Gaming & Matka</h1>
+    <p>Secure & Simple Admin-Managed Platform</p>
+  </header>
+
+  <!-- PROMOTIONS -->
+  <section class="banner">
+    <h2>🎉 Promotions</h2>
+    <p id="bannerText" class="small">Welcome Offer • Refer & Earn • Festive Offers Live</p>
+  </section>
+
+  <!-- AUTH SECTION -->
+  <section class="auth-card" id="authSection">
+    <h2>Login / Register</h2>
+    <p class="small">Enter your 10-digit mobile number to proceed.</p>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+      <button onclick="switchTab('login')" id="tabLoginBtn" style="background:#facc15; color:#0f172a;" class="flex-1">Login</button>
+      <button onclick="switchTab('register')" id="tabRegBtn" style="background:#334155; color:#fff;" class="flex-1">Register</button>
+    </div>
+
+    <input id="phone" type="tel" maxlength="10" placeholder="10-digit Mobile Number">
+
+    <div id="otpBox" class="hidden">
+      <input id="otp" type="text" maxlength="4" placeholder="Enter 4-digit OTP (From Admin)">
+    </div>
+
+    <button id="authBtn" onclick="handleAuthAction()">Send OTP / Request</button>
+
+    <div id="authMessage" class="message hidden"></div>
+  </section>
+
+  <!-- ADMIN CONTROL PANEL (Visible only to 8076010690) -->
+  <section class="section hidden" id="adminSection" style="border: 1px solid #dc2626;">
+    <h2 style="color: #ef4444;">👑 Master Admin Control Panel</h2>
+    <p class="small">Pending user OTP requests. Send these OTPs via WhatsApp:</p>
+    <div id="adminOtpList" style="margin-top: 10px; space-y: 10px;"></div>
+  </section>
+
+  <!-- USER AREA -->
+  <section class="section hidden" id="userSection">
+    <div class="profile">
+      <div>
+        <h2 id="welcomeUser">Welcome</h2>
+        <p class="small" id="userPhone"></p>
+      </div>
+      <button class="danger" onclick="logout()">Logout</button>
+    </div>
+  </section>
+
+  <!-- MARKET SCHEDULE -->
+  <section class="section">
+    <h2>Game Schedule</h2>
+    <p class="small">Market opening/closing status is displayed automatically.</p>
+    <div class="market-grid" id="marketGrid"></div>
+  </section>
+
+  <!-- GAME SECTION -->
+  <section class="section hidden" id="gameSection">
+    <h2 id="selectedMarket">Select a Game</h2>
+    <p class="small">Select a number from 00 to 99.</p>
+    <div id="selectedNumberText" class="message">No number selected</div>
+    <div class="numbers" id="numberGrid"></div>
+  </section>
+
+  <!-- ACCOUNT INFO -->
+  <section class="section hidden" id="accountSection">
+    <h2>Account Details</h2>
+    <p>Mobile: <b id="accountMobile">-</b></p>
+  </section>
+
+</div>
+
+<script>
+  // Firebase Configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyD-Placeholder-Key",
+    authDomain: "mywebapp-self.firebaseapp.com",
+    projectId: "mywebapp-self",
+    storageBucket: "mywebapp-self.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef"
+  };
+
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  const db = firebase.firestore();
+
+  const MASTER_ADMIN = "8076010690";
+  let mode = "login"; // 'login' or 'register'
+  let otpRequestedState = false;
+
+  function switchTab(selectedMode) {
+    mode = selectedMode;
+    otpRequestedState = false;
+    document.getElementById("otpBox").classList.add("hidden");
+    document.getElementById("otp").value = "";
+    
+    if(mode === 'login') {
+      document.getElementById("tabLoginBtn").style.background = "#facc15";
+      document.getElementById("tabLoginBtn").style.color = "#0f172a";
+      document.getElementById("tabRegBtn").style.background = "#334155";
+      document.getElementById("tabRegBtn").style.color = "#fff";
+      document.getElementById("authBtn").textContent = "Login / Verify OTP";
+    } else {
+      document.getElementById("tabRegBtn").style.background = "#facc15";
+      document.getElementById("tabRegBtn").style.color = "#0f172a";
+      document.getElementById("tabLoginBtn").style.background = "#334155";
+      document.getElementById("tabLoginBtn").style.color = "#fff";
+      document.getElementById("authBtn").textContent = "Request OTP from Admin";
+    }
+  }
+
+  window.handleAuthAction = async function() {
+    const phone = document.getElementById("phone").value.trim();
+    if(phone.length !== 10) {
+      showAuthMsg("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    if(phone === MASTER_ADMIN) {
+      completeLogin(phone);
+      return;
+    }
+
+    if(mode === 'register') {
+      if(!otpRequestedState) {
+        const randomOtp = Math.floor(1000 + Math.random() * 9000).toString();
+        try {
+          await db.collection("otp_requests").doc(phone).set({
+            phone: phone,
+            otp: randomOtp,
+            time: new Date().toLocaleTimeString()
+          });
+          otpRequestedState = true;
+          document.getElementById("otpBox").classList.remove("hidden");
+          document.getElementById("authBtn").textContent = "Confirm OTP & Register";
+          showAuthMsg("OTP generated and sent to Master Admin panel! Get it from Admin.");
+        } catch(e) {
+          showAuthMsg("Error: " + e.message);
+        }
+      } else {
+        const enteredOtp = document.getElementById("otp").value.trim();
+        const doc = await db.collection("otp_requests").doc(phone).get();
+        if(doc.exists && doc.data().otp === enteredOtp) {
+          completeLogin(phone);
+        } else {
+          showAuthMsg("Incorrect OTP. Get the correct OTP from Admin.");
+        }
+      }
+    } else {
+      // Login mode
+      const otpBoxHidden = document.getElementById("otpBox").classList.contains("hidden");
+      if(otpBoxHidden) {
+        const doc = await db.collection("otp_requests").doc(phone).get();
+        if(doc.exists) {
+          document.getElementById("otpBox").classList.remove("hidden");
+          document.getElementById("authBtn").textContent = "Confirm Login";
+          showAuthMsg("Enter the OTP provided by the Admin.");
+        } else {
+          showAuthMsg("Number not registered! Please use 'Register' first.");
+        }
+      } else {
+        const enteredOtp = document.getElementById("otp").value.trim();
+        const doc = await db.collection("otp_requests").doc(phone).get();
+        if(doc.exists && doc.data().otp === enteredOtp) {
+          completeLogin(phone);
+        } else {
+          showAuthMsg("Incorrect OTP.");
+        }
+      }
+    }
+  };
+
+  function completeLogin(phone) {
+    document.getElementById("authSection").classList.add("hidden");
+    document.getElementById("userSection").classList.remove("hidden");
+    document.getElementById("accountSection").classList.remove("hidden");
+
+    document.getElementById("welcomeUser").textContent = "Welcome, User";
+    document.getElementById("userPhone").textContent = phone;
+    document.getElementById("accountMobile").textContent = phone;
+
+    if(phone === MASTER_ADMIN) {
+      document.getElementById("adminSection").classList.remove("hidden");
+      loadAdminPanel();
+    }
+  }
+
+  function loadAdminPanel() {
+    db.collection("otp_requests").onSnapshot(snapshot => {
+      const list = document.getElementById("adminOtpList");
+      list.innerHTML = "";
+      if(snapshot.empty) {
+        list.innerHTML = '<p class="small">No pending OTP requests.</p>';
+        return;
+      }
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        list.innerHTML += `
+          <div style="background:#0f172a; padding:10px; border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <span>Phone: <b>${data.phone}</b></span><br>
+              <span>OTP: <b style="color:#facc15; font-size:16px;">${data.otp}</b></span>
+            </div>
+            <a href="https://wa.me/?text=Aapka%20Royal%20Gaming%20OTP%20hai:%20${data.otp}" target="_blank" style="background:#22c55e; color:#0f172a; padding:6px 12px; border-radius:6px; font-weight:bold; text-decoration:none; font-size:12px;">WhatsApp</a>
+          </div>
+        `;
+      });
+    });
+  }
+
+  window.logout = function() {
+    location.reload();
+  };
+
+  function showAuthMsg(txt) {
+    const box = document.getElementById("authMessage");
+    box.textContent = txt;
+    box.classList.remove("hidden");
+  }
+
+  /* Market Schedule Configuration */
+  const markets = [
+    { name: "Delhi Bazar", open: "06:00", close: "15:00", result: "15:15" },
+    { name: "Shri Ganesh", open: "06:00", close: "16:15", result: "16:30" },
+    { name: "Faridabad", open: "06:00", close: "18:00", result: "18:15" },
+    { name: "Gaziyabaad", open: "06:00", close: "21:30", result: "21:45" },
+    { name: "Gali", open: "06:00", close: "23:00", result: "23:20" },
+    { name: "Disawer", open: "06:00", close: "04:30", result: "05:00", nextDay: true },
+    { name: "Morena Matka", open: "06:00", close: "14:00", result: "14:30" },
+    { name: "Kuber Khazana", open: "06:00", close: "19:00", result: "19:30" },
+    { name: "786", open: "06:00", close: "21:30", result: "22:00" }
+  ];
+
+  function getMinutes(time) {
+    const parts = time.split(":");
+    return Number(parts[0]) * 60 + Number(parts[1]);
+  }
+
+  function isMarketOpen(market) {
+    const now = new Date();
+    const current = now.getHours() * 60 + now.getMinutes();
+    const open = getMinutes(market.open);
+    const close = getMinutes(market.close);
+    if (market.nextDay) {
+      return (current >= open || current <= close);
+    }
+    return (current >= open && current < close);
+  }
+
+  function renderMarkets() {
+    const container = document.getElementById("marketGrid");
+    container.innerHTML = "";
+    markets.forEach(function(market, index) {
+      const open = isMarketOpen(market);
+      const card = document.createElement("article");
+      card.className = "market";
+      card.innerHTML = `
+        <h3>${market.name}</h3>
+        <p class="small">Opening: <b>${formatTime(market.open)}</b></p>
+        <p class="small">Closing: <b>${formatTime(market.close)}</b></p>
+        <p class="${open ? "open" : "closed"}">${open ? "● OPEN" : "● CLOSED"}</p>
+        <button ${open ? "" : "disabled"} style="${open ? '' : 'background:#334155; color:#94a3b8; cursor:not-allowed;'}" onclick="openGame(${index})">
+          ${open ? "Open Game" : "Closed"}
+        </button>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function formatTime(value) {
+    const [h, m] = value.split(":").map(Number);
+    const suffix = h >= 12 ? "PM" : "AM";
+    let hour = h % 12;
+    if (hour === 0) hour = 12;
+    return String(hour).padStart(2, "0") + ":" + String(m).padStart(2, "0") + " " + suffix;
+  }
+
+  window.openGame = function(index) {
+    const market = markets[index];
+    document.getElementById("gameSection").classList.remove("hidden");
+    document.getElementById("selectedMarket").textContent = market.name;
+    window.scrollTo({ top: document.getElementById("gameSection").offsetTop, behavior: "smooth" });
+  };
+
+  function createNumberGrid() {
+    const grid = document.getElementById("numberGrid");
+    for (let i = 0; i <= 99; i++) {
+      const number = String(i).padStart(2, "0");
+      const button = document.createElement("button");
+      button.className = "number";
+      button.textContent = number;
+      button.onclick = function() {
+        document.querySelectorAll(".number").forEach(btn => btn.classList.remove("selected"));
+        button.classList.add("selected");
+        document.getElementById("selectedNumberText").textContent = "Selected Number: " + number;
+      };
+      grid.appendChild(button);
+    }
+  }
+
+  createNumberGrid();
+  renderMarkets();
+  setInterval(renderMarkets, 30000);
+</script>
+
+</body>
+</html>
