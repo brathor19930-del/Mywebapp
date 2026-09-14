@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royal Gaming & Matka</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-slate-900 text-white min-p-4 flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-md bg-slate-800 p-6 rounded-xl shadow-2xl border border-yellow-500/30">
+        <h1 class="text-2xl font-bold text-center text-yellow-400 mb-6">🔥 Royal Gaming & Matka</h1>
+
+        <!-- Login / Register Box -->
+        <div id="auth-container">
+            <div class="flex border-b border-slate-700 mb-4">
+                <button id="tab-login" onclick="switchTab('login')" class="flex-1 py-2 font-bold text-yellow-400 border-b-2 border-yellow-400">लॉगिन</button>
+                <button id="tab-register" onclick="switchTab('register')" class="flex-1 py-2 font-bold text-slate-400">नया रजिस्टर</button>
+            </div>
+
+            <!-- Form -->
+            <div id="form-box" class="space-y-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">मोबाइल नंबर</label>
+                    <input type="text" id="phone" placeholder="10 अंक का मोबाइल नंबर" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white focus:outline-none focus:border-yellow-400">
+                </div>
+                
+                <div id="otp-group" class="hidden">
+                    <label class="block text-sm text-slate-400 mb-1">ओटीपी दर्ज करें (Admin से प्राप्त)</label>
+                    <input type="text" id="otp-input" placeholder="4 अंक का OTP" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white focus:outline-none focus:border-yellow-400">
+                </div>
+
+                <button id="action-btn" onclick="handleAction()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold py-2 rounded transition">ओटीपी मंगाएं</button>
+            </div>
+        </div>
+
+        <!-- Dashboard / Admin Panel Area -->
+        <div id="dashboard-container" class="hidden space-y-4">
+            <div class="bg-slate-900 p-4 rounded border border-slate-700 flex justify-between items-center">
+                <div>
+                    <p class="text-xs text-slate-400">लॉगिन यूजर:</p>
+                    <p id="user-display" class="font-bold text-yellow-400"></p>
+                </div>
+                <button onclick="logout()" class="bg-red-600 px-3 py-1 text-sm rounded text-white">लॉगआउट</button>
+            </div>
+
+            <!-- Master Admin Panel (Visible only to 8076010690) -->
+            <div id="admin-panel" class="hidden bg-slate-950 p-4 rounded border border-red-500/50 space-y-3">
+                <h2 class="text-red-400 font-bold text-lg">👑 Master Admin Control Panel</h2>
+                <p class="text-xs text-slate-400">यूज़र्स के जनरेटेड OTP यहाँ दिखेंगे, इन्हें देखकर व्हाट्सएप पर भेजें:</p>
+                <div id="admin-otp-list" class="space-y-2 max-h-48 overflow-y-auto">
+                    <!-- Dynamic OTP requests will load here -->
+                </div>
+            </div>
+
+            <div class="bg-slate-900 p-4 rounded text-center">
+                <p class="text-slate-400 text-sm">आपका वॉलेट बैलेंस</p>
+                <p class="text-3xl font-bold text-green-400">₹0.00</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration (आपकी पुरानी कॉन्फिग यहाँ जुड़ी है)
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-Placeholder-Key",
+            authDomain: "mywebapp-self.firebaseapp.com",
+            projectId: "mywebapp-self",
+            storageBucket: "mywebapp-self.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        const MASTER_ADMIN = "8076010690";
+        let currentMode = 'login';
+        let generatedOtp = '';
+
+        function switchTab(mode) {
+            currentMode = mode;
+            if(mode === 'login') {
+                document.getElementById('tab-login').className = "flex-1 py-2 font-bold text-yellow-400 border-b-2 border-yellow-400";
+                document.getElementById('tab-register').className = "flex-1 py-2 font-bold text-slate-400";
+                document.getElementById('action-btn').innerText = "लॉगिन करें";
+                document.getElementById('otp-group').classList.add('hidden');
+            } else {
+                document.getElementById('tab-register').className = "flex-1 py-2 font-bold text-yellow-400 border-b-2 border-yellow-400";
+                document.getElementById('tab-login').className = "flex-1 py-2 font-bold text-slate-400";
+                document.getElementById('action-btn').innerText = "ओटीपी मंगाएं";
+                document.getElementById('otp-group').classList.remove('hidden');
+            }
+        }
+
+        async function handleAction() {
+            const phone = document.getElementById('phone').value.trim();
+            if(phone.length !== 10) {
+                alert("कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें!");
+                return;
+            }
+
+            if(currentMode === 'register') {
+                // Generate 4 digit random OTP
+                generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+                
+                // Save to Firestore so Admin can see it
+                try {
+                    await db.collection("otp_requests").doc(phone).set({
+                        phone: phone,
+                        otp: generatedOtp,
+                        time: new Date().toLocaleTimeString()
+                    });
+                    alert("ओटीपी जनरेट हो गया है! एडमिन (8076010690) को भेज दिया गया है। एडमिन से व्हाट्सएप पर ओटीपी प्राप्त करें।");
+                } catch(e) {
+                    alert("एरर: " + e.message);
+                }
+            } else {
+                // Login logic
+                const otpInput = document.getElementById('otp-input').value.trim();
+                if(phone === MASTER_ADMIN) {
+                    // Direct Admin Login
+                    loginSuccess(phone);
+                } else {
+                    // Check OTP from Firestore
+                    const doc = await db.collection("otp_requests").doc(phone).get();
+                    if(doc.exists && doc.data().otp === otpInput) {
+                        loginSuccess(phone);
+                    } else {
+                        alert("गलत ओटीपी या नंबर! कृपया एडमिन से सही ओटीपी लें।");
+                    }
+                }
+            }
+        }
+
+        function loginSuccess(phone) {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('dashboard-container').classList.remove('hidden');
+            document.getElementById('user-display').innerText = phone;
+
+            if(phone === MASTER_ADMIN) {
+                document.getElementById('admin-panel').classList.remove('hidden');
+                loadAdminRequests();
+            }
+        }
+
+        function logout() {
+            location.reload();
+        }
+
+        // Load requests for Admin
+        function loadAdminRequests() {
+            db.collection("otp_requests").onSnapshot(snapshot => {
+                const list = document.getElementById('admin-otp-list');
+                list.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    list.innerHTML += `
+                        <div class="bg-slate-900 p-2 rounded flex justify-between items-center text-sm border border-slate-800">
+                            <span>📞 <b>${data.phone}</b><br>OTP: <span class="text-yellow-400 font-bold text-base">${data.otp}</span></span>
+                            <a href="https://wa.me/?text=Aapka%20Royal%20Gaming%20OTP%20hai:%20${data.otp}" target="_blank" class="bg-green-600 px-2 py-1 rounded text-xs text-white font-bold">WhatsApp भेजें</a>
+                        </div>
+                    `;
+                });
+            });
+        }
+    </script>
+</body>
+</html>
